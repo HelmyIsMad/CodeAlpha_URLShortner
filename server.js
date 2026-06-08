@@ -63,11 +63,30 @@ app.get("/", (req, res) => {
 app.get("/admin", (req, res) => {
   res.send(`
     <h1>URL Shortener - Admin</h1>
+    <input type="text" id="longUrl" placeholder="Enter long URL here" style="width: 300px;">
+    <button onclick="shorten()">Shorten</button>
+    <p id="result"></p>
+    <hr>
     <button onclick="showDB()">Show DB</button>
     <button onclick="resetDB()">Reset DB</button>
     <pre id="dbDisplay"></pre>
 
     <script>
+      async function shorten() {
+        const longUrl = document.getElementById('longUrl').value;
+        const res = await fetch('/shorten', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ longUrl })
+        });
+        const data = await res.json();
+        if (data.shortUrl) {
+          document.getElementById('result').innerHTML = 'Short URL: <a href="' + data.shortUrl + '" target="_blank">' + data.shortUrl + '</a>';
+        } else {
+          alert('Error shortening URL');
+        }
+      }
+
       async function showDB() {
         const res = await fetch('/urls');
         const data = await res.json();
@@ -120,13 +139,14 @@ app.post("/shorten", async (req, res) => {
 });
 
 // Returns all stored URLs
-app.get("/urls", (req, res) => {
-  res.json(listAllUrls());
+app.get("/urls", async (req, res) => {
+  const urls = await listAllUrls();
+  res.json(urls);
 });
 
 // Deletes all stored URLs and resets the counter
-app.delete("/urls", (req, res) => {
-  resetDatabase();
+app.delete("/urls", async (req, res) => {
+  await resetDatabase();
   res.json({ message: "Database reset" });
 });
 

@@ -1,91 +1,46 @@
-const initSqlJs = require("sql.js");
-const fs = require("fs");
-const path = require("path");
+const { neon } = require("@neondatabase/serverless");
 
-const DB_PATH = process.env.VERCEL
-  ? "/tmp/data.db"
-  : path.join(__dirname, "data.db");
-
-let db;
-let SQL;
+const sql = neon(process.env.DATABASE_URL);
 
 async function connectDB() {
-  const wasmRes = await fetch("https://sql.js.org/dist/sql-wasm.wasm");
-  const wasmBinary = new Uint8Array(await wasmRes.arrayBuffer());
-  SQL = await initSqlJs({ wasmBinary });
-  try {
-    const buffer = fs.readFileSync(DB_PATH);
-    db = new SQL.Database(buffer);
-  } catch {
-    db = new SQL.Database();
-  }
-  db.run("CREATE TABLE IF NOT EXISTS urls (code TEXT PRIMARY KEY, longUrl TEXT NOT NULL)");
-  db.run("CREATE TABLE IF NOT EXISTS counter (name TEXT PRIMARY KEY, value INTEGER NOT NULL DEFAULT 0)");
-  db.run("CREATE INDEX IF NOT EXISTS idx_longUrl ON urls(longUrl)");
-  saveDB();
-  console.log("Connected to SQLite");
+  await sql`CREATE TABLE IF NOT EXISTS urls (code TEXT PRIMARY KEY, "longUrl" TEXT NOT NULL)`;
+  await sql`CREATE TABLE IF NOT EXISTS counter (name TEXT PRIMARY KEY, value INTEGER NOT NULL DEFAULT 0)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_longUrl ON urls("longUrl")`;
+  console.log("Connected to Neon Postgres");
 }
 
-function saveDB() {
-  const data = db.export();
-  fs.writeFileSync(DB_PATH, Buffer.from(data));
-}
-
-function exec(stmt) {
-  const result = [];
-  while (stmt.step()) {
-    result.push(stmt.getAsObject());
-  }
-  stmt.free();
-  return result;
-}
-
-function get(stmt) {
-  const rows = exec(stmt);
+async function findByCode(code) {
+  const rows = await sql`SELECT * FROM urls WHERE code = ${code}`;
   return rows.length ? rows[0] : null;
 }
 
-function findByCode(code) {
-  const stmt = db.prepare("SELECT * FROM urls WHERE code = ?");
-  stmt.bind([code]);
-  return get(stmt);
+async function findByLongUrl(longUrl) {
+  const rows = await sql`SELECT * FROM urls WHERE "longUrl" = ${longUrl}`;
+  return rows.length ? rows[0] : null;
 }
 
-function findByLongUrl(longUrl) {
-  const stmt = db.prepare("SELECT * FROM urls WHERE longUrl = ?");
-  stmt.bind([longUrl]);
-  return get(stmt);
+async function createUrl(code, longUrl) {
+  await sql`INSERT INTO urls (code, "longUrl") VALUES (${code}, ${longUrl})`;
 }
 
-function createUrl(code, longUrl) {
-  const stmt = db.prepare("INSERT INTO urls (code, longUrl) VALUES (?, ?)");
-  stmt.bind([code, longUrl]);
-  stmt.run();
-  stmt.free();
-  saveDB();
+async function listAllUrls() {
+  const rows = await sql`SELECT * FROM urls ORDER BY code`;
+  return rows;
 }
 
-function listAllUrls() {
-  const stmt = db.prepare("SELECT * FROM urls ORDER BY code");
-  return exec(stmt);
+async function resetDatabase() {
+  await sql`DELETE FROM urls`;
+  await sql`DELETE FROM counter`;
 }
 
-function resetDatabase() {
-  db.run("DELETE FROM urls");
-  db.run("DELETE FROM counter");
-  saveDB();
-}
-
-function getNextCounter() {
-  let row = get(db.prepare("SELECT value FROM counter WHERE name = 'urlCounter'"));
-  if (!row) {
-    db.run("INSERT INTO counter (name, value) VALUES ('urlCounter', 0)");
-    saveDB();
+async function getNextCounter() {
+  const rows = await sql`SELECT value FROM counter WHERE name = 'urlCounter'`;
+  if (rows.length === 0) {
+    await sql`INSERT INTO counter (name, value) VALUES ('urlCounter', 0)`;
     return 0;
   }
-  const value = row.value;
-  db.run("UPDATE counter SET value = value + 1 WHERE name = 'urlCounter'");
-  saveDB();
+  const value = rows[0].value;
+  await sql`UPDATE counter SET value = value + 1 WHERE name = 'urlCounter'`;
   return value;
 }
 
