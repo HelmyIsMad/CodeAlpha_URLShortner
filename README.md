@@ -2,6 +2,8 @@
 
 A URL shortening service built with Express and Neon Postgres, deployable on Vercel. Takes long URLs and generates short, shareable codes using a base62 encoding scheme.
 
+**Live demo:** [https://code-alpha-url-shortner.vercel.app/](https://code-alpha-url-shortner.vercel.app/)
+
 ## Features
 
 - Shorten any valid URL into a 7-character code
@@ -20,8 +22,8 @@ A URL shortening service built with Express and Neon Postgres, deployable on Ver
 1. Clone the repo and install dependencies:
 
 ```bash
-git clone <repo-url>
-cd urlshortner
+git clone https://github.com/HelmyIsMad/CodeAlpha_URLShortner.git
+cd CodeAlpha_URLShortner
 npm install
 ```
 
