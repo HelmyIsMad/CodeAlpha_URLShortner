@@ -75,9 +75,15 @@ app.get("/", (req, res) => {
   `);
 });
 
+function requestBaseURL(req) {
+  const proto = req.get("x-forwarded-proto") || req.protocol;
+  return `${proto}://${req.get("host")}`;
+}
+
 // Shortens a long URL and returns a short code
 app.post("/shorten", async (req, res) => {
   const { longUrl } = req.body;
+  const baseURL = requestBaseURL(req);
 
   if (!longUrl) {
     return res.status(400).json({ error: "longUrl is required" });
@@ -88,7 +94,7 @@ app.post("/shorten", async (req, res) => {
   const existing = await findByLongUrl(longUrl);
   if (existing) {
     return res.json({
-      shortUrl: `${BASE_URL}/${existing.code}`,
+      shortUrl: `${baseURL}/${existing.code}`,
       code: existing.code,
     });
   }
@@ -99,7 +105,7 @@ app.post("/shorten", async (req, res) => {
   await createUrl(code, longUrl);
 
   return res.json({
-    shortUrl: `${BASE_URL}/${code}`,
+    shortUrl: `${baseURL}/${code}`,
     code: code,
   });
 });
