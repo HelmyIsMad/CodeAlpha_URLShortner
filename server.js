@@ -128,5 +128,10 @@ app.get("/:code", async (req, res) => {
   }
 });
 
-connectDB();
-app.listen(PORT, HOST, () => console.log(`Listening on ${BASE_URL}`));
+if (require.main === module) {
+  connectDB().then(() => {
+    app.listen(PORT, HOST, () => console.log(`Listening on ${BASE_URL}`));
+  });
+}
+
+module.exports = app;
