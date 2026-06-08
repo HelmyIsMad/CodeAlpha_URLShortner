@@ -39,9 +39,6 @@ app.get("/", (req, res) => {
     <input type="text" id="longUrl" placeholder="Enter long URL here" style="width: 300px;">
     <button onclick="shorten()">Shorten</button>
     <p id="result"></p>
-    <button onclick="showDB()">Show DB</button>
-    <button onclick="resetDB()">Reset</button>
-    <pre id="dbDisplay"></pre>
 
     <script>
       async function shorten() {
@@ -58,7 +55,19 @@ app.get("/", (req, res) => {
           alert('Error shortening URL');
         }
       }
+    </script>
+  `);
+});
 
+// Serves the admin UI
+app.get("/admin", (req, res) => {
+  res.send(`
+    <h1>URL Shortener - Admin</h1>
+    <button onclick="showDB()">Show DB</button>
+    <button onclick="resetDB()">Reset DB</button>
+    <pre id="dbDisplay"></pre>
+
+    <script>
       async function showDB() {
         const res = await fetch('/urls');
         const data = await res.json();
