@@ -10,7 +10,9 @@ let db;
 let SQL;
 
 async function connectDB() {
-  SQL = await initSqlJs();
+  SQL = await initSqlJs({
+    locateFile: file => `https://sql.js.org/dist/${file}`,
+  });
   try {
     const buffer = fs.readFileSync(DB_PATH);
     db = new SQL.Database(buffer);
