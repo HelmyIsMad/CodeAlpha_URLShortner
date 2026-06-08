@@ -10,9 +10,9 @@ let db;
 let SQL;
 
 async function connectDB() {
-  SQL = await initSqlJs({
-    locateFile: file => `https://sql.js.org/dist/${file}`,
-  });
+  const wasmRes = await fetch("https://sql.js.org/dist/sql-wasm.wasm");
+  const wasmBinary = new Uint8Array(await wasmRes.arrayBuffer());
+  SQL = await initSqlJs({ wasmBinary });
   try {
     const buffer = fs.readFileSync(DB_PATH);
     db = new SQL.Database(buffer);
