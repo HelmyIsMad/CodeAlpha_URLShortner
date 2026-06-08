@@ -1,10 +1,12 @@
+require("dotenv").config();
 const express = require("express");
 const { connectDB, findByCode, findByLongUrl, createUrl, getNextCounter, listAllUrls, resetDatabase } = require("./database");
 const app = express();
 app.use(express.json());
 
-const PORT = 3000;
-const BASE_URL = `http://localhost:${PORT}`;
+const HOST = process.env.HOST || "localhost";
+const PORT = process.env.PORT || 3000;
+const BASE_URL = `http://${HOST}:${PORT}`;
 
 const ALPHABET =
   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -127,4 +129,4 @@ app.get("/:code", async (req, res) => {
 });
 
 connectDB();
-app.listen(PORT, () => console.log(`Listening on ${BASE_URL}`));
+app.listen(PORT, HOST, () => console.log(`Listening on ${BASE_URL}`));
