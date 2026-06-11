@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>URL Shortener - Admin</title>
+</head>
+<body>
+  <h1>URL Shortener - Admin</h1>
+  <input type="text" id="longUrl" placeholder="Enter long URL here" style="width: 300px;">
+  <button onclick="shorten()">Shorten</button>
+  <p id="result"></p>
+  <hr>
+  <button onclick="showDB()">Show DB</button>
+  <button onclick="resetDB()">Reset DB</button>
+  <pre id="dbDisplay"></pre>
+
+  <script>
+    async function shorten() {
+      const longUrl = document.getElementById('longUrl').value;
+      const res = await fetch('/shorten', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ longUrl })
+      });
+      const data = await res.json();
+      if (data.shortUrl) {
+        document.getElementById('result').innerHTML = 'Short URL: <a href="' + data.shortUrl + '" target="_blank">' + data.shortUrl + '</a>';
+      } else {
+        alert('Error shortening URL');
+      }
+    }
+
+    async function showDB() {
+      const res = await fetch('/urls');
+      const data = await res.json();
+      document.getElementById('dbDisplay').textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function resetDB() {
+      if (!confirm('Reset the database?')) return;
+      await fetch('/urls', { method: 'DELETE' });
+      document.getElementById('dbDisplay').textContent = '';
+      alert('Database reset');
+    }
+  </script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const path = require("path");
 const { connectDB, findByCode, findByLongUrl, createUrl, getNextCounter, listAllUrls, resetDatabase } = require("./database");
 const app = express();
 app.use(express.json());
@@ -34,73 +35,12 @@ function isValidURL(url) {
 
 // Serves the HTML UI
 app.get("/", (req, res) => {
-  res.send(`
-    <h1>URL Shortener</h1>
-    <input type="text" id="longUrl" placeholder="Enter long URL here" style="width: 300px;">
-    <button onclick="shorten()">Shorten</button>
-    <p id="result"></p>
-
-    <script>
-      async function shorten() {
-        const longUrl = document.getElementById('longUrl').value;
-        const res = await fetch('/shorten', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ longUrl })
-        });
-        const data = await res.json();
-        if (data.shortUrl) {
-          document.getElementById('result').innerHTML = 'Short URL: <a href="' + data.shortUrl + '" target="_blank">' + data.shortUrl + '</a>';
-        } else {
-          alert('Error shortening URL');
-        }
-      }
-    </script>
-  `);
+  res.sendFile(path.join(__dirname, "templates", "index.html"));
 });
 
 // Serves the admin UI
 app.get("/admin", (req, res) => {
-  res.send(`
-    <h1>URL Shortener - Admin</h1>
-    <input type="text" id="longUrl" placeholder="Enter long URL here" style="width: 300px;">
-    <button onclick="shorten()">Shorten</button>
-    <p id="result"></p>
-    <hr>
-    <button onclick="showDB()">Show DB</button>
-    <button onclick="resetDB()">Reset DB</button>
-    <pre id="dbDisplay"></pre>
-
-    <script>
-      async function shorten() {
-        const longUrl = document.getElementById('longUrl').value;
-        const res = await fetch('/shorten', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ longUrl })
-        });
-        const data = await res.json();
-        if (data.shortUrl) {
-          document.getElementById('result').innerHTML = 'Short URL: <a href="' + data.shortUrl + '" target="_blank">' + data.shortUrl + '</a>';
-        } else {
-          alert('Error shortening URL');
-        }
-      }
-
-      async function showDB() {
-        const res = await fetch('/urls');
-        const data = await res.json();
-        document.getElementById('dbDisplay').textContent = JSON.stringify(data, null, 2);
-      }
-
-      async function resetDB() {
-        if (!confirm('Reset the database?')) return;
-        await fetch('/urls', { method: 'DELETE' });
-        document.getElementById('dbDisplay').textContent = '';
-        alert('Database reset');
-      }
-    </script>
-  `);
+  res.sendFile(path.join(__dirname, "templates", "admin.html"));
 });
 
 function requestBaseURL(req) {
