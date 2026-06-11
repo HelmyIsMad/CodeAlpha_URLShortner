@@ -1,6 +1,6 @@
 let dbConnected = false;
-const app = require("../server");
-const { connectDB } = require("../database");
+const app = require("../src/app");
+const { connectDB } = require("../src/config/database");
 
 module.exports = async (req, res) => {
   if (!dbConnected) {
