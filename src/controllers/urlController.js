@@ -1,6 +1,6 @@
 const path = require("path");
 const { findByCode, findByLongUrl, createUrl, getNextCounter, listAllUrls, resetDatabase } = require("../config/database");
-const { encode, isValidURL, requestBaseURL } = require("../utils/helpers");
+const { generateCode, isValidURL, requestBaseURL } = require("../utils/helpers");
 
 exports.getHome = (req, res) => {
   res.sendFile(path.join(__dirname, "..", "..", "templates", "index.html"));
@@ -29,7 +29,11 @@ exports.shortenUrl = async (req, res) => {
   }
 
   const nextId = await getNextCounter();
-  const code = encode(nextId);
+  let code = generateCode(nextId);
+  let attempt = 0;
+  while (await findByCode(code) && attempt < 10) {
+    code = generateCode(nextId, ++attempt);
+  }
 
   await createUrl(code, longUrl);
 
