@@ -11,6 +11,8 @@ A URL shortening service built with Express and Neon Postgres, deployable on Ver
 - Redirect via the short code to the original URL
 - Admin page at `/admin` to view all stored URLs or reset the database
 - Data persists across deployments via Neon Postgres
+- URL validation via the `validator` library (requires `http`/`https` protocol and a valid domain, IP, or `localhost`)
+- Rate limiting on `/shorten` (max 10 requests per 15 minutes per IP) to prevent abuse
 
 ## Prerequisites
 
@@ -42,7 +44,7 @@ DATABASE_URL=postgresql://user:password@ep-xxx.us-east-2.aws.neon.tech/neondb?ss
 4. Start the server:
 
 ```bash
-node server.js
+npm start
 ```
 
 The app runs at `http://localhost:3000`.
@@ -52,7 +54,7 @@ The app runs at `http://localhost:3000`.
 | Endpoint  | Description                          |
 |-----------|--------------------------------------|
 | `GET /`   | Main page with a URL shortening form |
-| `POST /shorten` | API to shorten a URL (JSON body: `{ "longUrl": "..." }`) |
+| `POST /shorten` | API to shorten a URL (JSON body: `{ "longUrl": "..." }`). Rate-limited to 10 req/15min per IP. Returns `400` for invalid URLs, `429` when rate-limited |
 | `GET /:code` | Redirects a short code to the original URL |
 | `GET /admin` | Admin panel to view/reset the database |
 
@@ -63,10 +65,19 @@ Push the repo to GitHub and import it into Vercel. Add a Neon Postgres database 
 ## Project Structure
 
 ```
-├── api/index.js       — Vercel serverless entry point
-├── database.js        — Database layer (Neon Postgres)
-├── server.js          — Express app with routes
-├── vercel.json        — Vercel deployment config
-├── .env               — Local environment variables (not tracked)
-└── .env.example       — Example environment variables
+├── api/
+│   └── index.js           — Vercel serverless entry point
+├── src/
+│   ├── server.js          — Server entry point (starts listener)
+│   ├── app.js             — Express app setup (middleware, routes, rate limiter)
+│   ├── routes/index.js    — Route definitions
+│   ├── controllers/urlController.js — Request handlers
+│   ├── config/database.js — Database layer (Neon Postgres)
+│   └── utils/helpers.js   — Base62 encoder, URL validator, baseURL helper
+├── templates/
+│   ├── index.html         — Homepage with URL shortening form
+│   └── admin.html         — Admin panel
+├── vercel.json            — Vercel deployment config
+├── .env                   — Local environment variables (not tracked)
+└── .env.example           — Example environment variables
 ```
