@@ -1,4 +1,3 @@
-const crypto = require("crypto");
 const net = require("net");
 const validator = require("validator");
 
@@ -15,10 +14,13 @@ function encode(num) {
   return encoded.padStart(7, ALPHABET[0]);
 }
 
-function generateCode(counter, salt = "") {
-  const hash = crypto.createHash("sha256").update(`${counter}:${salt}`).digest();
-  const num = hash.readUIntBE(0, 6);
-  return encode(num);
+const MOD = 62n ** 7n;
+const KEY = 2798536472823n;
+const ADD = 1578946321753n;
+
+function generateCode(counter) {
+  const n = (BigInt(counter) * KEY + ADD) % MOD;
+  return encode(Number(n));
 }
 
 function isValidURL(url) {

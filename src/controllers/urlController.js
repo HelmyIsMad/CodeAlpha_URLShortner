@@ -29,11 +29,7 @@ exports.shortenUrl = async (req, res) => {
   }
 
   const nextId = await getNextCounter();
-  let code = generateCode(nextId);
-  let attempt = 0;
-  while (await findByCode(code) && attempt < 10) {
-    code = generateCode(nextId, ++attempt);
-  }
+  const code = generateCode(nextId);
 
   await createUrl(code, longUrl);
 
