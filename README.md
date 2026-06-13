@@ -13,6 +13,7 @@ A URL shortening service built with Express and Neon Postgres, deployable on Ver
 - Data persists across deployments via Neon Postgres
 - URL validation via the `validator` library (requires `http`/`https` protocol and a valid domain, IP, or `localhost`)
 - Rate limiting on `/shorten` (max 10 requests per 15 minutes per IP) to prevent abuse
+- Random-looking short codes generated via a bijective LCG permutation (no sequential guessing, zero DB collision checks)
 
 ## Prerequisites
 
