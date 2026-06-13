@@ -1,3 +1,6 @@
+const net = require("net");
+const validator = require("validator");
+
 const ALPHABET =
   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 const BASE = ALPHABET.length;
@@ -12,12 +15,21 @@ function encode(num) {
 }
 
 function isValidURL(url) {
-  try {
-    new URL(url);
-    return true;
-  } catch {
+  if (!validator.isURL(url, {
+    require_protocol: true,
+    require_valid_protocol: true,
+    protocols: ["http", "https"],
+    require_tld: false,
+  })) {
     return false;
   }
+
+  const hostname = new URL(url).hostname.replace(/^\[|\]$/g, "");
+
+  if (net.isIP(hostname)) return true;
+  if (hostname === "localhost") return true;
+
+  return hostname.includes(".");
 }
 
 function requestBaseURL(req) {
