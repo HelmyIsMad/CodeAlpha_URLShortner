@@ -1,4 +1,5 @@
 require("dotenv").config();
+const path = require("path");
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const routes = require("./routes");
@@ -15,6 +16,7 @@ const shortenLimiter = rateLimit({
 });
 app.use("/shorten", shortenLimiter);
 
+app.use(express.static(path.join(__dirname, "..", "templates")));
 app.use(routes);
 
 module.exports = app;

@@ -4,45 +4,187 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>URL Shortener - Admin</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h1>URL Shortener - Admin</h1>
-  <input type="text" id="longUrl" placeholder="Enter long URL here" style="width: 300px;">
-  <button onclick="shorten()">Shorten</button>
-  <p id="result"></p>
-  <hr>
-  <button onclick="showDB()">Show DB</button>
-  <button onclick="resetDB()">Reset DB</button>
-  <pre id="dbDisplay"></pre>
+  <div class="wrapper">
+    <div class="card">
+      <div class="logo">
+        <h1>Admin panel</h1>
+        <p class="subtitle">Manage your shortened URLs.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="longUrl">New URL</label>
+        <input type="url" id="longUrl" placeholder="https://example.com/very/long/url">
+      </div>
+
+      <button class="btn btn-primary" id="shortenBtn" onclick="shorten()">
+        <span class="btn-text">Shorten</span>
+        <span class="spinner"></span>
+      </button>
+
+      <div class="result-box" id="resultBox">
+        <div class="result-label">Shortened link</div>
+        <div class="result-content">
+          <a href="" id="shortLink" target="_blank"></a>
+          <button class="copy-btn" id="copyBtn" onclick="copyLink()" title="Copy to clipboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="db-section">
+        <div class="db-stats">
+          <div class="stat">Total: <span class="stat-value" id="totalCount">0</span></div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-secondary btn-sm" onclick="showDB()">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+            Show database
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="resetDB()">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              <line x1="10" y1="11" x2="10" y2="17"/>
+              <line x1="14" y1="11" x2="14" y2="17"/>
+            </svg>
+            Reset database
+          </button>
+        </div>
+        <pre class="db-display" id="dbDisplay"></pre>
+      </div>
+
+      <div class="divider"></div>
+
+      <p class="back-link"><a href="/">&larr; Back to shortener</a></p>
+    </div>
+  </div>
 
   <script>
+    const btn = document.getElementById('shortenBtn');
+    const input = document.getElementById('longUrl');
+    const resultBox = document.getElementById('resultBox');
+    const shortLink = document.getElementById('shortLink');
+    const copyBtn = document.getElementById('copyBtn');
+    const dbDisplay = document.getElementById('dbDisplay');
+
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') shorten();
+    });
+
     async function shorten() {
-      const longUrl = document.getElementById('longUrl').value;
-      const res = await fetch('/shorten', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ longUrl })
-      });
-      const data = await res.json();
-      if (data.shortUrl) {
-        document.getElementById('result').innerHTML = 'Short URL: <a href="' + data.shortUrl + '" target="_blank">' + data.shortUrl + '</a>';
-      } else {
-        alert('Error shortening URL');
+      const longUrl = input.value.trim();
+      if (!longUrl) {
+        showError('Please enter a URL');
+        return;
+      }
+
+      btn.classList.add('loading');
+      btn.disabled = true;
+      resultBox.classList.remove('visible', 'success', 'error');
+
+      try {
+        const res = await fetch('/shorten', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ longUrl })
+        });
+        const data = await res.json();
+
+        if (data.shortUrl) {
+          shortLink.href = data.shortUrl;
+          shortLink.textContent = data.shortUrl;
+          resultBox.className = 'result-box success visible';
+          copyBtn.className = 'copy-btn';
+          updateStats();
+        } else {
+          showError(data.error || 'Something went wrong');
+        }
+      } catch (err) {
+        showError('Network error. Please try again.');
+      } finally {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+      }
+    }
+
+    function showError(msg) {
+      resultBox.className = 'result-box error visible';
+      shortLink.textContent = msg;
+      shortLink.href = '';
+    }
+
+    async function copyLink() {
+      const text = shortLink.textContent;
+      if (!text || !shortLink.href) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        copyBtn.classList.add('copied');
+        setTimeout(() => copyBtn.classList.remove('copied'), 2000);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        copyBtn.classList.add('copied');
+        setTimeout(() => copyBtn.classList.remove('copied'), 2000);
       }
     }
 
     async function showDB() {
-      const res = await fetch('/urls');
-      const data = await res.json();
-      document.getElementById('dbDisplay').textContent = JSON.stringify(data, null, 2);
+      const wasVisible = dbDisplay.classList.contains('visible');
+      if (wasVisible) {
+        dbDisplay.classList.remove('visible');
+        return;
+      }
+
+      try {
+        const res = await fetch('/urls');
+        const data = await res.json();
+        dbDisplay.textContent = JSON.stringify(data, null, 2);
+        dbDisplay.classList.add('visible');
+      } catch {
+        dbDisplay.textContent = 'Failed to fetch database.';
+        dbDisplay.classList.add('visible');
+      }
     }
 
     async function resetDB() {
-      if (!confirm('Reset the database?')) return;
-      await fetch('/urls', { method: 'DELETE' });
-      document.getElementById('dbDisplay').textContent = '';
-      alert('Database reset');
+      if (!confirm('Are you sure you want to reset the entire database? This cannot be undone.')) return;
+      try {
+        await fetch('/urls', { method: 'DELETE' });
+        dbDisplay.classList.remove('visible');
+        dbDisplay.textContent = '';
+        updateStats();
+        alert('Database reset successfully.');
+      } catch {
+        alert('Failed to reset database.');
+      }
     }
+
+    async function updateStats() {
+      try {
+        const res = await fetch('/urls');
+        const data = await res.json();
+        const count = Array.isArray(data) ? data.length : 0;
+        document.getElementById('totalCount').textContent = count;
+      } catch {}
+    }
+
+    updateStats();
   </script>
 </body>
 </html>
