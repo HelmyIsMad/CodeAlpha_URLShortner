@@ -16,7 +16,7 @@ exports.shortenUrl = async (req, res) => {
 
   if (!longUrl) {
     return res.status(400).json({ error: "longUrl is required" });
-  } else if (!isValidURL(longUrl)) {
+  } else if (!(await isValidURL(longUrl))) {
     return res.status(400).json({ error: "Invalid URL" });
   }
 
