@@ -385,17 +385,8 @@ input[type="url"]::placeholder {
     border-radius: 12px;
   }
 
-  .btn-group {
-    flex-direction: column;
-  }
-
   .btn-primary {
     padding: 1rem 1.75rem;
-  }
-
-  .btn-secondary,
-  .btn-danger {
-    width: 100%;
   }
 
   .result-box {
